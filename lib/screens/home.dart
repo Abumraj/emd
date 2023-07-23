@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:uniapp/Services/serviceImplementation.dart';
 import 'package:uniapp/dbHelper/constant.dart';
 import 'package:uniapp/pages/aspirantPdf.dart';
@@ -7,6 +8,7 @@ import 'package:uniapp/screens/liveEvents.dart';
 import 'package:uniapp/screens/mainscreen.dart';
 import 'package:uniapp/screens/phone.dart';
 import 'package:uniapp/screens/postSubscription.dart';
+import 'package:uniapp/screens/unihub.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -136,6 +138,7 @@ class _HomeState extends State<Home> {
                   MaterialButton(
                     minWidth: 40,
                     onPressed: () {
+                      Get.to(Unihub());
                       setState(() {
                         currentPage = AspirantPdf();
                         currentTab = 2;
