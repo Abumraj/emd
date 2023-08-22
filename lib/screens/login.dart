@@ -8,14 +8,15 @@ import 'package:uniapp/models/studentType.dart';
 import 'package:uniapp/screens/ForgotPassword.dart';
 import 'package:uniapp/screens/home.dart';
 import 'package:uniapp/screens/signUp.dart';
-import 'package:uniapp/widgets/encrypt.dart';
 import 'package:uniapp/widgets/header_widget.dart';
 import 'package:uniapp/widgets/hexColor.dart';
 import 'package:uniapp/widgets/theme_helper.dart';
-
 import '../Services/uapi.dart';
 
 class Login extends StatefulWidget {
+  final String? portal;
+
+  const Login({required this.portal});
   @override
   _LoginState createState() => _LoginState();
 }
@@ -24,21 +25,12 @@ class _LoginState extends State<Login> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController _emailTextController = TextEditingController();
   TextEditingController _passwordTextController = TextEditingController();
-  List<StudentType>? studentType = <StudentType>[];
-  List<DropdownMenuItem<String>> studentTypeDropDown =
-      <DropdownMenuItem<String>>[];
-  var _currentStudent;
-  String? userType;
+
   late String token;
   bool loading = false;
-  bool hidePass = true;
   bool isUserLoggedIn = false;
   String? school;
-  String? program;
   void initState() {
-    // var decode = extractPayload(
-    // "eyJpdiI6Imc0MUk2dHQ3WkdJN0pUNW51eUtWZkE9PSIsInZhbHVlIjoiZWlhSEh5dyt2THlKdTREbDZMT3BYU2VYN01KcjhVS3lJVWdKTitHY0hpZ1dpYmtxa3RTcEdVYU9cLzE3Zzc2TnVJNm81M1VpSXVXQjM5K2FYdEoySzJBPT0iLCJtYWMiOiI5OGZiM2M3NTJiMjNiMWFmYTlmZjc1N2Y5NjRhY2RlMjBlMDdlY2QwZjc2NjczNDI1Mzk2ZjFkY2NhODFhOTU5In0=");
-    // print(decode);
     _getSchool();
 
     super.initState();
@@ -48,51 +40,6 @@ class _LoginState extends State<Login> {
     await Constants.getUserSchoolSharedPreference().then((value) {
       school = value.toString();
     });
-    await Constants.getUserProgramSharedPreference().then((value) {
-      program = value.toString();
-      if (program != "uni") {
-        setState(() {
-          userType = "remedial";
-        });
-      }
-      _getStudentType();
-    });
-  }
-
-  _getStudentType() async {
-    List<StudentType>? data = await Uapi.getStudentType(school!);
-    //print(data);
-    setState(() {
-      studentType = data;
-      studentTypeDropDown = getFacultyDropDown();
-      _currentStudent = studentType![0].type;
-      print(_currentStudent);
-    });
-  }
-
-  changeSelectedFaculty(var selectedFaculty) async {
-    setState(() {
-      _currentStudent = selectedFaculty;
-      userType = selectedFaculty;
-    });
-  }
-
-  List<DropdownMenuItem<String>> getFacultyDropDown() {
-    List<DropdownMenuItem<String>> items = [];
-    for (int i = 0; i < studentType!.length; i++) {
-      setState(() {
-        items.insert(
-            0,
-            DropdownMenuItem(
-                child: Text(
-                  studentType![i].name.toString(),
-                  style: TextStyle(
-                      color: Colors.purple, fontWeight: FontWeight.bold),
-                ),
-                value: studentType![i].type.toString()));
-      });
-    }
-    return items;
   }
 
   @override
@@ -108,198 +55,151 @@ class _LoginState extends State<Login> {
                   Icons.person), //let's create a common header widget
             ),
             SafeArea(
-              child: Container(
-                  padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-                  margin: EdgeInsets.fromLTRB(
-                      20, 10, 20, 10), // This will be the login form
-                  child: Column(
-                    children: [
-                      Text(
-                        'Welcome',
-                        style: TextStyle(
-                            color: Colors.purple,
-                            fontSize: 50,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        'Signin into your account',
-                        style: TextStyle(color: Colors.purple),
-                      ),
-                      SizedBox(height: 30.0),
-                      Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              Container(
-                                child: TextFormField(
-                                  controller: _emailTextController,
-                                  decoration: ThemeHelper().textInputDecoration(
-                                      "E-mail address", "Enter your email"),
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (val) {
-                                    // ignore: prefer_is_not_empty
-                                    if (!(val!.isEmpty) &&
-                                        !RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$")
-                                            .hasMatch(val)) {
-                                      return "Enter a valid email address";
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                decoration:
-                                    ThemeHelper().inputBoxDecorationShaddow(),
+                child: !loading
+                    ? Container(
+                        padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+                        margin: EdgeInsets.fromLTRB(
+                            20, 10, 20, 10), // This will be the login form
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                widget.portal!,
+                                style: TextStyle(
+                                    color: Colors.purple,
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.bold),
                               ),
-                              SizedBox(height: 30.0),
-                              Container(
-                                child: ListTile(
-                                    title: TextFormField(
-                                      controller: _passwordTextController,
-                                      //obscureText: true,
-                                      decoration: ThemeHelper()
-                                          .textInputDecoration("Password*",
-                                              "Enter your password"),
-                                      obscureText: hidePass,
-                                      // ignore: missing_return
-                                      validator: (value) {
-                                        if (value!.isEmpty) {
-                                          return "Password is required";
-                                        } else if (value.length < 6) {
-                                          return "the password has to be at least 6 characters long";
-                                        } else
-                                          return null;
-                                      },
-                                    ),
-                                    trailing: IconButton(
-                                        color: Colors.purple,
-                                        icon: Icon(
-                                          Icons.remove_red_eye,
-                                        ),
-                                        onPressed: () {
-                                          if (hidePass) {
-                                            setState(() {
-                                              hidePass = false;
-                                            });
-                                          } else {
-                                            setState(() {
-                                              hidePass = true;
-                                            });
-                                          }
-                                        })),
-                                decoration:
-                                    ThemeHelper().inputBoxDecorationShaddow(),
-                              ),
-                              SizedBox(height: 15.0),
-                              SizedBox(height: 15.0),
-                              program == "uni"
-                                  ? Container(
-                                      decoration: ThemeHelper()
-                                          .inputBoxDecorationShaddow(),
-                                      child: DropdownButtonFormField<String>(
+                            ),
+                            Text(
+                              'Welcome, signin into your account',
+                              style: TextStyle(color: Colors.purple),
+                            ),
+                            SizedBox(height: 30.0),
+                            Form(
+                                key: _formKey,
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      child: TextFormField(
+                                        controller: _emailTextController,
                                         decoration: ThemeHelper()
                                             .textInputDecoration(
-                                                "Select Student Type"),
-                                        items: studentTypeDropDown,
-                                        onChanged: changeSelectedFaculty,
-                                        value: _currentStudent,
-                                        validator: (userType) {
-                                          if (userType!.isEmpty) {
-                                            return "Student Type is required";
+                                                "Matric Number*",
+                                                "Enter your matric number"),
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        validator: (val) {
+                                          // ignore: prefer_is_not_empty
+                                          if (!(val!.isEmpty) &&
+                                              !RegExp(r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$")
+                                                  .hasMatch(val)) {
+                                            return "Enter a valid email address";
+                                          } else if (val.isEmpty) {
+                                            return "Matric Number is required";
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                      decoration: ThemeHelper()
+                                          .inputBoxDecorationShaddow(),
+                                    ),
+                                    SizedBox(height: 30.0),
+                                    Container(
+                                      child: TextFormField(
+                                        controller: _passwordTextController,
+                                        obscureText: true,
+                                        decoration: ThemeHelper()
+                                            .textInputDecoration("Password*",
+                                                "Enter your password"),
+
+                                        // ignore: missing_return
+                                        validator: (value) {
+                                          if (value!.isEmpty) {
+                                            return "Password is required";
+                                          } else if (value.length < 6) {
+                                            return "the password has to be at least 6 characters long";
                                           } else
                                             return null;
                                         },
-                                        hint: Text(
-                                          "Select Student Type",
-                                          style:
-                                              TextStyle(color: Colors.purple),
+                                      ),
+                                      decoration: ThemeHelper()
+                                          .inputBoxDecorationShaddow(),
+                                    ),
+                                    SizedBox(height: 15.0),
+                                    Container(
+                                      margin:
+                                          EdgeInsets.fromLTRB(10, 0, 10, 20),
+                                      alignment: Alignment.topRight,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          Get.to(ForgotPassword());
+                                        },
+                                        child: Text(
+                                          "Forgot your password?",
+                                          style: TextStyle(
+                                            color: Colors.purple,
+                                          ),
                                         ),
                                       ),
-                                    )
-                                  : Container(),
-                              Container(
-                                margin: EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                alignment: Alignment.topRight,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Get.to(ForgotPassword());
-                                  },
-                                  child: Text(
-                                    "Forgot your password?",
-                                    style: TextStyle(
-                                      color: Colors.purple,
                                     ),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                decoration:
-                                    ThemeHelper().buttonBoxDecoration(context),
-                                child: ElevatedButton(
-                                  style: ThemeHelper().buttonStyle(),
-                                  child: Padding(
-                                    padding:
-                                        EdgeInsets.fromLTRB(40, 10, 40, 10),
-                                    child: Text(
-                                      'Sign In'.toUpperCase(),
-                                      style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white),
+                                    Container(
+                                      decoration: ThemeHelper()
+                                          .buttonBoxDecoration(context),
+                                      child: ElevatedButton(
+                                        style: ThemeHelper().buttonStyle(),
+                                        child: Padding(
+                                          padding: EdgeInsets.fromLTRB(
+                                              40, 10, 40, 10),
+                                          child: Text(
+                                            'Sign In'.toUpperCase(),
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white),
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          userLogin();
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                  onPressed: () {
-                                    userLogin();
-                                  },
-                                ),
-                              ),
-                              Container(
-                                margin: EdgeInsets.fromLTRB(10, 20, 10, 20),
-                                //child: Text('Don\'t have an account? Create'),
-                                child: Text.rich(TextSpan(children: [
-                                  TextSpan(text: "Don\'t have an account? "),
-                                  TextSpan(
-                                    text: 'Create',
-                                    recognizer: TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Get.to(() => SignUp());
-                                      },
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: HexColor("#8A02AE")),
-                                  ),
-                                ])),
-                              ),
-                            ],
-                          )),
-                    ],
-                  )),
-            ),
+                                  ],
+                                )),
+                          ],
+                        ))
+                    : Visibility(
+                        visible: loading == true,
+                        child: Center(
+                          child: Container(
+                            alignment: Alignment.center,
+                            color: Colors.white,
+                            child: CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.purple),
+                            ),
+                          ),
+                        ),
+                      )),
           ],
         ),
       ),
     );
   }
 
-  void secondSelected(value) {
-    if (program == "uni") {
-      setState(() {
-        userType = value;
-      });
-    } else {
-      setState(() {
-        userType = "remedial";
-      });
-    }
-  }
-
   Future userLogin() async {
     FormState? formState = _formKey.currentState;
-
     // Getting value from Controller
     String email = _emailTextController.text;
     String password = _passwordTextController.text;
     // Store all data with Param Name.
-    var data = {'email': email, 'password': password};
-    Constants.saveUserTypeSharedPreference(userType!);
+    var data = {
+      'email': email,
+      'password': password,
+      // 'fcmToken': widget.fcmToken
+    };
+
     Constants.saveUserMailSharedPreference(email);
 
     if (formState!.validate()) {
@@ -309,9 +209,7 @@ class _LoginState extends State<Login> {
       });
 
       // SERVER LOGIN API URL
-      var url = "$school/$userType/login";
-      // Starting Web API Call.
-      //print(url);
+      var url = "$school/remedial/login";
       Dio dio = Dio();
       var response = await dio.post(
         url,
@@ -319,45 +217,37 @@ class _LoginState extends State<Login> {
         options: Options(headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
-        }
-//            followRedirects: false,
-//            validateStatus: (status) { return status < 500; }
-            ),
+        }),
       );
-      // Getting Server response into variable.
-      print('body: ${response.data}');
       var result = response.data;
 
       var message = result["access_token"];
-      print("Access_token: $message");
-      Constants.saveUserTokenSharedPreference(message);
 
-// If the Response Message is Matched.
       if (message != null) {
+        Constants.saveUserTokenSharedPreference(message);
         setState(() {
           token = message;
-          isUserLoggedIn = true;
-          Constants.saveUserLoggedInSharedPreference(isUserLoggedIn);
+          Constants.saveUserLoggedInSharedPreference(true);
         });
         Get.offAll(() => Home());
       } else {
-        // If Email or Password did not Matched.
-        // Hiding the CircularProgressIndicator.
         setState(() {
           loading = false;
         });
         // Showing Alert Dialog with Response JSON Message.
         showDialog(
+          barrierDismissible: false,
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
+              shape: Border(),
               title: new Text(
-                response.data,
+                response.data['info'],
                 style: TextStyle(
                   color: Colors.purple,
-                  fontSize: 10.00,
+                  fontSize: 20.00,
                   fontWeight: FontWeight.w400,
-                  fontStyle: FontStyle.italic,
+                  fontStyle: FontStyle.normal,
                 ),
               ),
               actions: <Widget>[
@@ -374,35 +264,4 @@ class _LoginState extends State<Login> {
       }
     }
   }
-
-  // Future _loadAndSave() async {
-  //   await Api.getRegCourse(userType, token).then((allRegCourse) {
-  //     course = allRegCourse;
-  //     print(course);
-  //     _dbHelper.truncateTable1().then((value) {
-  //       insert(course[0]);
-  //     });
-
-  //     Api.getChapter(userType, token).then((value) {
-  //       _dbHelper.truncateTable2();
-  //       _dbHelper.saveChapter(value);
-  //     });
-  //     Api.getQuestions(userType, token).then((value) {
-  //       _dbHelper.truncateTable3();
-  //       _dbHelper.saveQuestion(value);
-  //     });
-  //   });
-  // }
-
-  // insert(RegCourse regCourse) {
-  //   _dbHelper.saveRegCourse(regCourse).then((val) {
-  //     counter = counter + 1;
-  //     if (counter >= course.length) {
-  //       return;
-  //     }
-  //     RegCourse a = course[counter];
-  //     insert(a);
-  //     print(a);
-  //   });
-
 }

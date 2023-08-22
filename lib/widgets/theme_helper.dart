@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:uniapp/main.dart';
 import 'package:uniapp/widgets/hexColor.dart';
 
 class ThemeHelper {
+  final _key = "isDarktheme";
   Color _primaryColor = HexColor("#DC54FE");
   Color _accentColor = HexColor("#8A02AE");
+  _saveThemeToSp(bool isDarkTheme) => saveLocal.setBool(_key, isDarkTheme);
+  bool _loadThemeSp() => saveLocal.getBool(_key) ?? false;
+  ThemeMode get theme => _loadThemeSp() ? ThemeMode.light : ThemeMode.dark;
+  void swithThemeMode() {
+    Get.changeThemeMode(_loadThemeSp() ? ThemeMode.dark : ThemeMode.light);
+    _saveThemeToSp(!_loadThemeSp());
+  }
 
   InputDecoration textInputDecoration(
       [String lableText = "", String hintText = ""]) {
@@ -76,7 +86,7 @@ class ThemeHelper {
           borderRadius: BorderRadius.circular(30.0),
         ),
       ),
-      minimumSize: MaterialStateProperty.all(Size(50, 50)),
+      minimumSize: MaterialStateProperty.all(Size(30, 30)),
       backgroundColor: MaterialStateProperty.all(Colors.transparent),
       shadowColor: MaterialStateProperty.all(Colors.transparent),
     );

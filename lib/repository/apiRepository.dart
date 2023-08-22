@@ -6,7 +6,9 @@ import 'package:uniapp/models/facultyModel.dart';
 import 'package:uniapp/models/level.dart';
 import 'package:uniapp/models/questionModel.dart';
 import 'package:uniapp/models/regCourseModel.dart';
+import 'package:uniapp/models/statusModel.dart';
 import 'package:uniapp/models/subModel.dart';
+import 'package:uniapp/models/userModel.dart';
 import 'package:uniapp/models/videoCallModel.dart';
 import 'package:uniapp/models/videoListModel.dart';
 
@@ -18,18 +20,25 @@ abstract class ApiRepository {
       int departmentId, int semester, int level);
   Future<List<Chapter>> getChapter();
   Future<List<Question>> getQuestions();
+  Future<List<Question>> getTestQuestions(int chapterId);
   Future<List<RegCourse>> getRegCourse();
   Future<List<VideoList>> getVideoList(int chapterId);
-  Future<List<ChapterList>> getChapterList(int courseId);
+  Future<List<ChapterList>> getChapterList();
   Future<List<CourseVideo>> getVideo();
+  Future<List<CourseVideo>> getEndVideo();
   Future<List<DepartCourse>> getCart();
   Future<dynamic> addToCart(int courseId, String courseCode, int coursePrice);
+  Future<dynamic> postTestResult(int chapterId, int result);
   Future<dynamic> deleteACourse(String courseCode);
   Future<dynamic> emptyCourseCart();
   Future<dynamic> logOUT();
   Future<List<Subscription>> getSubscription();
-  Future<dynamic> getAccessCode(String planCode, int amount, String email);
-  Future<dynamic> getStaAccessCode(int amount, String email);
+  Future<List<Statuz>> getStatus();
+  Future<User> getMyDetails();
+  Future<dynamic> getAccessCode(String reference);
+  Future<dynamic> getTestChapter(String chapterId);
   Future<dynamic> verifyTransaction(String reference);
+  Future<dynamic> saveToken(int chapterId);
+  Future<String> startTest(int chapterId);
   Future<dynamic> writeAreview(String title, String description);
 }

@@ -1,8 +1,8 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uniapp/models/departCoursesModel.dart';
-import 'package:uniapp/screens/paymentScreen.dart';
-
+import 'package:uniapp/screens/refresh.dart';
 import '../repository/apiRepository.dart';
 import '../repository/apiRepositoryimplementation.dart';
 
@@ -14,7 +14,7 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   ApiRepository _apiRepository = Get.put(ApiRepositoryImplementation());
   List<DepartCourse> _departCourse = [];
-  int _totalPrice = 0;
+  String _message = '';
   @override
   void initState() {
     _loadDepartCourse();
@@ -27,7 +27,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
       setState(() {
         _departCourse = result;
       });
-      print(_departCourse);
+      Get.snackbar("Discount", _message,
+          backgroundColor: Colors.black87,
+          colorText: Colors.white,
+          icon: Icon(
+            Icons.discount_sharp,
+            color: Colors.purple,
+          ),
+          duration: Duration(seconds: 3));
     }
   }
 
@@ -56,37 +63,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
         ],
         rows: _departCourse.map((course) {
-          _totalPrice += course.coursePrice;
+          // _totalPrice += course.coursePrice!;
           return DataRow(
               selected: _departCourse.contains(course),
               onSelectChanged: (b) {},
               cells: [
-                // DataCell(
-                //   Text(course.courseName),
-                //   onTap: () {
-                //     print('Selected ${course.courseName}');
-                //   },
-                // ),
                 DataCell(
                   Text(course.coursecode.toString()),
                 ),
-                // DataCell(
-                //   Center(
-                //     child: Badge(
-                //       toAnimate: true,
-                //       shape: BadgeShape.square,
-                //       badgeColor: Colors.purple,
-                //       borderRadius: BorderRadius.circular(8),
-                //       badgeContent: Text("${course.courseUnit}",
-                //           style: TextStyle(color: Colors.white)),
-                //     ),
-                //   ),
-                // ),
                 DataCell(
-                  Center(
-                      child: Text(course.coursePrice < 1
-                          ? "FREE"
-                          : "₦${course.coursePrice}")),
+                  Center(child: Text(course.courseUnit.toString())),
                 ),
               ]);
         }).toList(),
@@ -102,7 +88,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         elevation: 1.0,
         centerTitle: true,
         title: Text(
-          "CART VIEW",
+          "SELECTED COURSES",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -115,6 +101,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
             )
           : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               verticalDirection: VerticalDirection.down,
@@ -142,22 +129,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     Padding(
                       padding: EdgeInsets.all(20.0),
                       child: Center(
-                        child: RaisedButton(
-                            color: Colors.purple,
+                        child: TextButton(
+                            style: TextButton.styleFrom(
+                                backgroundColor: Colors.purple,
+                                elevation: 0.2,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30.0),
+                                )),
                             child: Text(
-                              'Pay ₦' + "$_totalPrice  now",
+                              "Enroll now",
                               style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold),
                             ),
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      CheckoutMethodBank(amount: _totalPrice),
-                                ),
-                              );
+                              _departCourse.forEach((element) async {
+                                await FirebaseMessaging.instance
+                                    .subscribeToTopic(element.coursecode!);
+                              });
+                              Get.offAll(Refresh());
                             }),
                       ),
                     ),

@@ -1,14 +1,26 @@
+import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:uniapp/Services/serviceImplementation.dart';
-import 'package:uniapp/dbHelper/constant.dart';
-import 'package:uniapp/pages/aspirantPdf.dart';
+import 'package:uniapp/Services/uapi.dart';
+import 'package:uniapp/dbHelper/db.dart';
 import 'package:uniapp/screens/departmentSelecton.dart';
-import 'package:uniapp/screens/liveEvents.dart';
 import 'package:uniapp/screens/mainscreen.dart';
 import 'package:uniapp/screens/phone.dart';
-import 'package:uniapp/screens/postSubscription.dart';
-import 'package:uniapp/screens/unihub.dart';
+import 'package:uniapp/screens/trends.dart';
+import 'package:uniapp/screens/unitrans.dart';
+import 'package:uniapp/widgets/gpapage.dart';
+
+// class CumstomClip extends CustomClipper<Path> {
+//   @override
+//   Path getClip(Size size) {
+//     Path path = Path();
+//     //  ..arcTo(path/2)
+//     return path;
+
+//   }
+
+//   @override
+//   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+// }
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -22,27 +34,36 @@ class _HomeState extends State<Home> {
   List<Widget> screens = [
     MainScreen(),
     StalHome(),
-    PosSubHome(),
-    AspirantPdf(),
-    Live(),
+    UniTrans(),
     PhoneSecurity()
   ];
   String? userType;
-  @override
-  void initState() {
-    _getUserTypeInState();
-    print("$isUserLoggedIn scores");
-    super.initState();
-  }
+  int statusCount = 0;
 
   final PageStorageBucket bucket = PageStorageBucket();
   Widget currentPage = MainScreen();
-  _getUserTypeInState() async {
-    await Constants.getUserTypeSharedPreference().then((value) {
-      setState(() {
-        userType = value.toString();
-      });
-    });
+  Widget secure() {
+    return Center(
+      child: Container(
+        height: 200,
+        width: 200,
+        child: Card(
+          child: Column(
+            children: [
+              ListTile(
+                title: Text("data"),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    ObjectBox.statusCount().then((value) => statusCount = value);
   }
 
   @override
@@ -63,8 +84,6 @@ class _HomeState extends State<Home> {
         shape: CircularNotchedRectangle(),
         notchMargin: 10,
         child: Container(
-          // decoration: BoxDecoration(
-          //     border: Border.all(width: 1.5, color: Colors.purple)),
           height: 60,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -104,9 +123,8 @@ class _HomeState extends State<Home> {
                     minWidth: 40,
                     onPressed: () {
                       setState(() {
-                        userType == "stalite"
-                            ? currentPage = StalHome()
-                            : PosSubHome();
+                        Uapi.openChromeSafariBrowser(
+                            "https://uilugportal.unilorin.edu.ng");
                         currentTab = 1;
                       });
                     },
@@ -120,7 +138,7 @@ class _HomeState extends State<Home> {
                               : Colors.purple,
                         ),
                         Text(
-                          userType == "stalite" ? "Register" : "Subscribe",
+                          "Portal",
                           style: TextStyle(
                             color: currentTab == 1
                                 ? Colors.purpleAccent
@@ -138,9 +156,8 @@ class _HomeState extends State<Home> {
                   MaterialButton(
                     minWidth: 40,
                     onPressed: () {
-                      Get.to(Unihub());
                       setState(() {
-                        currentPage = AspirantPdf();
+                        currentPage = GPA();
                         currentTab = 2;
                       });
                     },
@@ -148,13 +165,13 @@ class _HomeState extends State<Home> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.shopping_cart,
+                          Icons.calculate,
                           color: currentTab == 2
                               ? Colors.purpleAccent
                               : Colors.purple,
                         ),
                         Text(
-                          "UniHub",
+                          "GPA",
                           style: TextStyle(
                             color: currentTab == 2
                                 ? Colors.purpleAccent
@@ -168,21 +185,30 @@ class _HomeState extends State<Home> {
                     minWidth: 40,
                     onPressed: () {
                       setState(() {
-                        currentPage = Live();
+                        currentPage = CampusTrends();
                         currentTab = 3;
                       });
                     },
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.live_tv,
-                          color: currentTab == 3
-                              ? Colors.purpleAccent
-                              : Colors.purple,
+                        Badge(
+                          badgeColor: Colors.purple,
+                          badgeContent: Text(
+                            statusCount.toString(),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          child: Icon(
+                            Icons.speaker_phone,
+                            color: currentTab == 3
+                                ? Colors.purpleAccent
+                                : Colors.purple,
+                          ),
                         ),
                         Text(
-                          "Live",
+                          "DNB",
                           style: TextStyle(
                             color: currentTab == 3
                                 ? Colors.purpleAccent
@@ -192,31 +218,6 @@ class _HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  // MaterialButton(
-                  //   minWidth: 40,
-                  //   onPressed: () {
-                  //     setState(() {
-                  //       currentPage = PhoneSecurity();
-                  //       currentTab = 3;
-                  //     });
-                  //   },
-                  //   child: Column(
-                  //     mainAxisAlignment: MainAxisAlignment.center,
-                  //     children: [
-                  //       Icon(
-                  //         Icons.phone_locked_sharp,
-                  //         color: currentTab == 3 ? Colors.purple : Colors.white,
-                  //       ),
-                  //       Text(
-                  //         "Security",
-                  //         style: TextStyle(
-                  //           color:
-                  //               currentTab == 3 ? Colors.purple : Colors.white,
-                  //         ),
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ),
                 ],
               )
             ],

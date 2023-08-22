@@ -1,21 +1,23 @@
-import 'dart:convert';
-
-import 'package:api_cache_manager/api_cache_manager.dart';
-import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:get/get.dart';
 import 'package:uniapp/Services/abstractService.dart';
 import 'package:uniapp/Services/serviceImplementation.dart';
+import 'package:uniapp/dbHelper/db.dart';
+import 'package:uniapp/entities.dart' as m;
+import 'package:uniapp/main.dart';
+import 'package:uniapp/models/chapterModel.dart';
 import 'package:uniapp/models/chapterVideoModel.dart';
 import 'package:uniapp/models/level.dart';
+import 'package:uniapp/models/questionModel.dart';
+import 'package:uniapp/models/regCourseModel.dart';
+import 'package:uniapp/models/statusModel.dart';
+import 'package:uniapp/models/testModel.dart';
+import 'package:uniapp/models/userModel.dart';
 import 'package:uniapp/models/videoListModel.dart';
 import 'package:uniapp/models/videoCallModel.dart';
 import 'package:uniapp/models/subModel.dart';
-import 'package:uniapp/models/regCourseModel.dart';
-import 'package:uniapp/models/questionModel.dart';
 import 'package:uniapp/models/facultyModel.dart';
 import 'package:uniapp/models/departmentModel.dart';
 import 'package:uniapp/models/departCoursesModel.dart';
-import 'package:uniapp/models/chapterModel.dart';
 import 'package:uniapp/repository/apiRepository.dart';
 
 class ApiRepositoryImplementation implements ApiRepository {
@@ -37,7 +39,19 @@ class ApiRepositoryImplementation implements ApiRepository {
           "coursePrice": coursePrice
         },
       );
-      print(response.data);
+      return response.data;
+    } catch (e) {
+      return e;
+    }
+  }
+
+  @override
+  Future postTestResult(int chapterId, int result) async {
+    try {
+      final response = await _httpService.postRequest(
+        "/result",
+        {"chapterId": chapterId, "result": result},
+      );
       return response.data;
     } catch (e) {
       return e;
@@ -67,11 +81,11 @@ class ApiRepositoryImplementation implements ApiRepository {
   }
 
   @override
-  Future getAccessCode(String planCode, int amount, String email) async {
+  Future getAccessCode(String reference) async {
     try {
       final response = await _httpService.postRequest(
         "/transactionInit",
-        {"email": email, "amount": amount, "planCode": planCode},
+        {"reference": reference},
       );
 
       return response;
@@ -84,11 +98,9 @@ class ApiRepositoryImplementation implements ApiRepository {
   Future<List<Chapter>> getChapter() async {
     try {
       final response = await _httpService.getRequest("/chapters");
-      print(response.data);
       List<Chapter> list = parseChapter(response.data);
       return list;
     } catch (e) {
-      print(e);
       return []; // return an empty list on exception/error
     }
   }
@@ -99,12 +111,29 @@ class ApiRepositoryImplementation implements ApiRepository {
   }
 
   @override
+  Future<List<TestChapter>> getTestChapter(chapterId) async {
+    try {
+      final response = await _httpService.getRequest("/test/$chapterId");
+      print(response);
+      List<TestChapter> list = parseTestChapter(response.data);
+      return list;
+    } catch (e) {
+      return []; // return an empty list on exception/error
+    }
+  }
+
+  static List<TestChapter> parseTestChapter(dynamic responseBody) {
+    final parsed = responseBody.cast<Map<String, dynamic>>();
+    return parsed
+        .map<TestChapter>((json) => TestChapter.fromJson(json))
+        .toList();
+  }
+
+  @override
   Future<List<DepartCourse>> getCart() async {
     try {
       final response = await _httpService.getRequest("/getCart");
-      //print(response.data);
       List<DepartCourse> list = parsedDepartmentCourse(response.data);
-      // print("$list +g");
       return list;
     } catch (e) {
       return []; // return an empty list on exception/error
@@ -117,9 +146,7 @@ class ApiRepositoryImplementation implements ApiRepository {
     try {
       final response = await _httpService
           .getRequest("/departmentalCourse/$courseId,$semester,$level");
-      //print(response.data);
       List<DepartCourse> list = parsedDepartmentCourse(response.data);
-      // print("$list +g");
       return list;
     } catch (e) {
       return []; // return an empty list on exception/error
@@ -131,7 +158,6 @@ class ApiRepositoryImplementation implements ApiRepository {
     final y = parsed
         .map<DepartCourse>((json) => DepartCourse.fromJson(json))
         .toList();
-    //print(y);
     return y;
   }
 
@@ -139,9 +165,7 @@ class ApiRepositoryImplementation implements ApiRepository {
   Future<List<Department>> getDepartment(facultyId) async {
     try {
       final response = await _httpService.getRequest("/department/$facultyId");
-      // print(response.data);
       List<Department> list = parsedDepartment(response.data);
-      //print(list);
       return list;
     } catch (e) {
       return []; // return an empty list on exception/error
@@ -156,41 +180,13 @@ class ApiRepositoryImplementation implements ApiRepository {
   @override
   Future<List<Faculty>> getFaculty() async {
     try {
-      print("going");
       final response = await _httpService.getRequest("/faculty");
-      print("gone");
 
-      print(response);
       List<Faculty> list = parsedFaculty(response.data);
       return list;
     } catch (e) {
-      print(e);
       return []; // return an empty list on exception/error
     }
-    //   const API_KEY = "FACULTY_CACHE";
-    //   try {
-    //     late List<Faculty> list;
-    //     late final response;
-    //     var isCacheExist = await APICacheManager().isAPICacheKeyExist(API_KEY);
-    //     if (!isCacheExist) {
-    //       response = await _httpService.getRequest("/faculty");
-    //       print(response.data);
-    //       if (response.statusCode == 200) {
-    //         APICacheDBModel cacheDBModel =
-    //             new APICacheDBModel(key: API_KEY, syncData: response.data);
-    //         await APICacheManager().addCacheData(
-    //           cacheDBModel,
-    //         );
-    //       }
-    //       list = parsedFaculty(response.data);
-    //     } else {
-    //       var cacheData = APICacheManager().getCacheData(API_KEY);
-    //       list = parsedFaculty(cacheData);
-    //     }
-    //     return list;
-    //   } catch (e) {
-    //     return []; // return an empty list on exception/error
-    //   }
   }
 
   static List<Faculty> parsedFaculty(dynamic responseBody) {
@@ -202,6 +198,20 @@ class ApiRepositoryImplementation implements ApiRepository {
   Future<List<Question>> getQuestions() async {
     try {
       final response = await _httpService.getRequest("/courseQuestion");
+      List<Question> list = parsedQuestion(response.data);
+      print(list);
+      return list;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  @override
+  Future<List<Question>> getTestQuestions(chapterId) async {
+    try {
+      final response =
+          await _httpService.getRequest("/testQuestion/$chapterId");
+      print(response);
 
       List<Question> list = parsedQuestion(response.data);
       return list;
@@ -238,9 +248,11 @@ class ApiRepositoryImplementation implements ApiRepository {
   Future<List<RegCourse>> getRegCourse() async {
     try {
       final response = await _httpService.getRequest("/registeredCourse");
+      print(response);
       List<RegCourse> list = parseRegCourse(response.data);
       return list;
     } catch (e) {
+      print(e);
       return []; // return an empty list on exception/error
     }
   }
@@ -251,37 +263,11 @@ class ApiRepositoryImplementation implements ApiRepository {
   }
 
   @override
-  Future getStaAccessCode(int amount, String email) async {
-    try {
-      final response = await _httpService
-          .postRequest("/transactionInit", {"amount": amount, "email": email});
-      return response;
-    } catch (e) {
-      return e; // return an empty list on exception/error
-    }
-  }
-
-  @override
   Future<List<Subscription>> getSubscription() async {
-    const API_KEY = "SUBSCRIPTION_PLAN";
     try {
-      late List<Subscription> list;
-      late final response;
-      var isCacheExist = await APICacheManager().isAPICacheKeyExist(API_KEY);
-      if (!isCacheExist) {
-        response = await _httpService.getRequest("/$userType/subscriptionPlan");
-        if (response.statusCode == 200) {
-          APICacheDBModel cacheDBModel =
-              new APICacheDBModel(key: API_KEY, syncData: response.data);
-          await APICacheManager().addCacheData(
-            cacheDBModel,
-          );
-        }
-        list = parseSubResponse(response.data);
-      } else {
-        var cacheData = APICacheManager().getCacheData(API_KEY);
-        list = parseSubResponse(cacheData);
-      }
+      final response = await _httpService.getRequest("/subscriptionPlan");
+
+      List<Subscription> list = parseSubResponse(response.data);
       return list;
     } catch (e) {
       return []; // return an empty list on exception/error
@@ -297,36 +283,31 @@ class ApiRepositoryImplementation implements ApiRepository {
 
   @override
   Future<List<CourseVideo>> getVideo() async {
-    // ignore: non_constant_identifier_names
-    String API_KEY = "COURSE";
     try {
       late List<CourseVideo> list;
       late final response;
-      // var isCacheExist = await APICacheManager().isAPICacheKeyExist(API_KEY);
-      // print("$isCacheExist started");
 
-      // if (!isCacheExist) {
-      //APICacheManager().emptyCache();
       response = await _httpService.getRequest("/registeredCourseVideo");
-      print("network called");
       if (response.statusCode == 200) {
         list = parseResponse(response.data);
-        // APICacheDBModel cacheDBModel = APICacheDBModel(
-        //   key: API_KEY,
-        //   syncData: response.data,
-        // );
-        // await APICacheManager().addCacheData(
-        //   cacheDBModel,
-        // );
-        print(list);
       }
       return list;
-      // }
-      //  {
-      //   var cacheData = APICacheManager().getCacheData(API_KEY);
-      //   print(cacheData.toString());
-      //   list = parseResponse(cacheData);
-      // }
+    } catch (e) {
+      return []; // return an empty list on exception/error
+    }
+  }
+
+  @override
+  Future<List<CourseVideo>> getEndVideo() async {
+    try {
+      late List<CourseVideo> list;
+      late final response;
+
+      response = await _httpService.getRequest("/liveEvents");
+      if (response.statusCode == 200) {
+        list = parseResponse(response.data);
+      }
+      return list;
     } catch (e) {
       return []; // return an empty list on exception/error
     }
@@ -342,10 +323,8 @@ class ApiRepositoryImplementation implements ApiRepository {
   @override
   Future<List<VideoList>> getVideoList(chapterId) async {
     try {
-      final response = await _httpService.getRequest(
-          "http://192.168.43.144:8000/api/stalite/courseVideo/$chapterId");
+      final response = await _httpService.getRequest("/courseVideo/$chapterId");
       List<VideoList> list = parsedVideoList(response.data);
-      // print(list);
       return list;
     } catch (e) {
       print(e);
@@ -359,28 +338,16 @@ class ApiRepositoryImplementation implements ApiRepository {
   }
 
   @override
-  Future<List<ChapterList>> getChapterList(courseId) async {
-    // ignore: non_constant_identifier_names
-    String API_KEY = "$courseId";
+  Future<List<ChapterList>> getChapterList() async {
     try {
       late List<ChapterList> list;
       late final response;
-      // var isCacheExist = await APICacheManager().isAPICacheKeyExist(API_KEY);
-      // if (!isCacheExist) {
-      response = await _httpService.getRequest("/courseVideoChapter/$courseId");
+
+      response = await _httpService.getRequest("/courseVideoChapter");
       if (response.statusCode == 200) {
-        // APICacheDBModel cacheDBModel =
-        //     new APICacheDBModel(key: API_KEY, syncData: response.data);
-        // await APICacheManager().addCacheData(
-        //   cacheDBModel,
-        // );
-        print(response);
         list = parsedChapterList(response.data);
       }
-      // } else {
-      //   var cacheData = APICacheManager().getCacheData(API_KEY);
-      //   list = parsedChapterList(cacheData);
-      // }
+
       return list;
     } catch (e) {
       return []; // return an empty list on exception/error
@@ -394,10 +361,15 @@ class ApiRepositoryImplementation implements ApiRepository {
         .toList();
   }
 
+  static List<Statuz> parsedStatus(dynamic responseBody) {
+    final parsed = responseBody.cast<Map<String, dynamic>>();
+    return parsed.map<Statuz>((json) => Statuz.fromJson(json)).toList();
+  }
+
   @override
   Future logOUT() async {
     try {
-      final response = await _httpService.getRequest("/logOut");
+      final response = await _httpService.getRequest("/logout");
 
       return response.data;
     } catch (e) {
@@ -414,7 +386,18 @@ class ApiRepositoryImplementation implements ApiRepository {
           "reference": reference,
         },
       );
+      return response.data;
+    } catch (e) {
+      return e; // return an empty list on exception/error
+    }
+  }
 
+  @override
+  Future saveToken(chapterId) async {
+    try {
+      final response = await _httpService.getRequest(
+        "/testApproval/$chapterId",
+      );
       return response;
     } catch (e) {
       return e; // return an empty list on exception/error
@@ -425,7 +408,7 @@ class ApiRepositoryImplementation implements ApiRepository {
   Future writeAreview(String title, String description) async {
     try {
       final response = await _httpService.postRequest(
-        "/$userType/review",
+        "/review",
         {
           "title": title,
           "description": description,
@@ -435,6 +418,58 @@ class ApiRepositoryImplementation implements ApiRepository {
       return response;
     } catch (e) {
       return e;
+    }
+  }
+
+  @override
+  Future<List<Statuz>> getStatus() async {
+    List<m.Status> status = [];
+    try {
+      final response = await _httpService.getRequest("/courseVideo");
+      List<Statuz> list = parsedStatus(response.data);
+      list.forEach((e) {
+        status.add(m.Status(
+            level: e.level,
+            type: e.type,
+            url: e.url,
+            time: DateTime.parse(e.time),
+            shown: "0"));
+      });
+      if (status.isNotEmpty) {
+        ObjectBox.saveStatus(status);
+      }
+      return list;
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
+
+  @override
+  Future<String> startTest(int chapterId) async {
+    // print(chapterId);
+    try {
+      final response = await _httpService.getRequest(
+        "/startTest/$chapterId",
+      );
+      return response.data;
+    } catch (e) {
+      print(e);
+      return "false"; // return an empty list on exception/error
+    }
+  }
+
+  @override
+  Future<User> getMyDetails() async {
+    try {
+      final response = await _httpService.getRequest(
+        "/myDetails",
+      );
+
+      return User.fromJson(response.data);
+    } catch (e) {
+      print(e);
+      return User(); // return an empty list on exception/error
     }
   }
 }

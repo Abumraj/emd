@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:uniapp/screens/program.dart';
@@ -12,11 +12,12 @@ class Welcome extends StatefulWidget {
   _WelcomeState createState() => _WelcomeState();
 }
 
-class _WelcomeState extends State<Welcome> {
+class _WelcomeState extends State<Welcome> with WidgetsBindingObserver {
   List<SliderModel> mySLides = [];
   int slideIndex = 0;
   PageController controller = PageController();
-
+  Timer? _timer;
+  int _counter = 0;
   Widget _buildPageIndicator(bool isCurrentPage) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 2.0),
@@ -32,8 +33,45 @@ class _WelcomeState extends State<Welcome> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     mySLides = getSlides();
     controller = new PageController();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+        setState(() {
+          _counter++;
+        });
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _timer!.cancel();
+        if (_counter > 5) {
+          print(_counter);
+          Get.to(() => Programs());
+          setState(() {
+            _counter = 0;
+          });
+          print(_counter);
+        } else {
+          print(_counter);
+          setState(() {
+            _counter = 0;
+          });
+        }
+        // AppLifecycleState activeState = AppLifecycleState.resumed;
+        // WidgetsBinding.instance.handleAppLifecycleStateChanged(activeState);
+      });
+    }
   }
 
   @override
@@ -83,13 +121,15 @@ class _WelcomeState extends State<Welcome> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    FlatButton(
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white,
+                      ),
                       onPressed: () {
                         controller.animateToPage(3,
                             duration: Duration(milliseconds: 400),
                             curve: Curves.easeInCirc);
                       },
-                      splashColor: Colors.purple,
                       child: Text(
                         "SKIP",
                         style: TextStyle(
@@ -106,14 +146,15 @@ class _WelcomeState extends State<Welcome> {
                         ],
                       ),
                     ),
-                    FlatButton(
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white,
+                      ),
                       onPressed: () {
-                        print("this is slideIndex: $slideIndex");
                         controller.animateToPage(slideIndex + 1,
                             duration: Duration(milliseconds: 500),
                             curve: Curves.easeInCirc);
                       },
-                      splashColor: Colors.purple,
                       child: Text(
                         "NEXT",
                         style: TextStyle(
@@ -125,7 +166,7 @@ class _WelcomeState extends State<Welcome> {
               )
             : InkWell(
                 onTap: () {
-                  Get.off(() => Programs());
+                  Get.to(() => Programs());
                 },
                 child: Container(
                   height: Platform.isIOS ? 70 : 60,
@@ -162,7 +203,10 @@ class SlideTile extends StatelessWidget {
           CircleAvatar(
               radius: 98,
               backgroundColor: Colors.white,
-              child: Image.asset(imagePath)),
+              child: Image.asset(
+                imagePath,
+                width: 110,
+              )),
           SizedBox(
             height: 30,
           ),

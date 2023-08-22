@@ -10,7 +10,7 @@ class School {
     return School(
       id: json['id'],
       schoolName: json['name'],
-      schoolCode: json['code'],
+      schoolCode: json['url'],
       schoolChannel: json['channel'],
     );
   }

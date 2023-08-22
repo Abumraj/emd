@@ -1,10 +1,3 @@
-// To parse this JSON data, do
-//
-//     final productList = productListFromJson(jsonString);
-//import 'dart:convert';
-
-import '../widgets/encrypt.dart';
-
 class VideoList {
   int? videoId;
   String? videoName;
@@ -13,26 +6,29 @@ class VideoList {
   String? videoUrl;
   String? thumbUrl;
   String? duration;
-  String? status;
+  String? visible;
+  String? author;
   VideoList(
       {this.videoName,
       this.videoSize,
+      this.visible,
       this.videoDescript,
       this.thumbUrl,
       this.duration,
       this.videoUrl,
       this.videoId,
-      this.status});
+      this.author});
 
   factory VideoList.fromJson(Map<String, dynamic> json) {
     return VideoList(
       thumbUrl: json["thumbUrl"],
       videoUrl: json["videoUrl"],
+      visible: json["visible"],
       videoName: json["videoName"],
       videoSize: json["videoSize"],
       duration: json["duration"],
       videoDescript: json["videoDescript"],
-      status: json["status"],
+      author: json["author"],
       videoId: json["videoId"],
     );
   }
@@ -45,7 +41,7 @@ class VideoList {
         "videoSize": videoSize,
         "duration": duration,
         "videoDescript": videoDescript,
-        "status": status,
+        "author": author,
         "videoId": videoId,
       };
 }
